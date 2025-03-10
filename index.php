@@ -36,16 +36,28 @@ $debug = [];
 $showDebug = true;
 
 // List all environment variables for debugging
-$allEnvVars = [];
-foreach ($_ENV as $key => $value) {
-    if (strpos($key, 'DB_') === 0 || $key === 'RENDER') {
-        $allEnvVars[$key] = ($key === 'DB_PASSWORD') ? '******' : $value;
+$debug['all_env_vars'] = [];
+foreach ($_SERVER as $key => $value) {
+    if (strpos($key, 'DB_') === 0 || $key === 'RENDER' || $key === 'DATABASE_URL' || $key === 'DEBUG') {
+        $debug['all_env_vars'][$key] = ($key === 'DB_PASSWORD' || $key === 'DATABASE_URL') ? '******' : $value;
     }
 }
-$debug['env_vars'] = $allEnvVars;
+
+// Check for environment variables in different ways
+$debug['env_vars'] = [
+    'RENDER (getenv)' => getenv('RENDER'),
+    'RENDER ($_ENV)' => $_ENV['RENDER'] ?? 'not set',
+    'RENDER ($_SERVER)' => $_SERVER['RENDER'] ?? 'not set',
+    'DATABASE_URL (getenv)' => getenv('DATABASE_URL') ? 'set (hidden)' : 'not set',
+    'DATABASE_URL ($_ENV)' => isset($_ENV['DATABASE_URL']) ? 'set (hidden)' : 'not set',
+    'DATABASE_URL ($_SERVER)' => isset($_SERVER['DATABASE_URL']) ? 'set (hidden)' : 'not set',
+    'DB_HOST (getenv)' => getenv('DB_HOST'),
+    'DB_HOST ($_ENV)' => $_ENV['DB_HOST'] ?? 'not set',
+    'DB_HOST ($_SERVER)' => $_SERVER['DB_HOST'] ?? 'not set'
+];
 
 // Check for Render-specific database URL
-$renderDbUrl = getenv('DATABASE_URL');
+$renderDbUrl = getenv('DATABASE_URL') ?: ($_ENV['DATABASE_URL'] ?? ($_SERVER['DATABASE_URL'] ?? null));
 if ($renderDbUrl) {
     $debug['render_db_url'] = 'Found DATABASE_URL environment variable';
     
@@ -67,12 +79,12 @@ if ($renderDbUrl) {
 } else {
     $debug['render_db_url'] = 'DATABASE_URL not found, using individual environment variables';
     
-    // Database connection settings from individual environment variables
-    $host = getenv('DB_HOST');
-    $port = getenv('DB_PORT') ?: '5432';
-    $dbname = getenv('DB_NAME');
-    $user = getenv('DB_USER');
-    $password = getenv('DB_PASSWORD');
+    // Try different ways to get environment variables
+    $host = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? ($_SERVER['DB_HOST'] ?? null));
+    $port = getenv('DB_PORT') ?: ($_ENV['DB_PORT'] ?? ($_SERVER['DB_PORT'] ?? '5432'));
+    $dbname = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? ($_SERVER['DB_NAME'] ?? null));
+    $user = getenv('DB_USER') ?: ($_ENV['DB_USER'] ?? ($_SERVER['DB_USER'] ?? null));
+    $password = getenv('DB_PASSWORD') ?: ($_ENV['DB_PASSWORD'] ?? ($_SERVER['DB_PASSWORD'] ?? null));
 }
 
 // Fallback to defaults if environment variables are not set
@@ -94,7 +106,9 @@ $debug['connection'] = [
 $debug['environment'] = [
     'RENDER' => getenv('RENDER') ? 'true' : 'false',
     'SERVER_SOFTWARE' => $_SERVER['SERVER_SOFTWARE'] ?? 'unknown',
-    'PHP_VERSION' => phpversion()
+    'PHP_VERSION' => phpversion(),
+    'DOCUMENT_ROOT' => $_SERVER['DOCUMENT_ROOT'] ?? 'unknown',
+    'SCRIPT_FILENAME' => $_SERVER['SCRIPT_FILENAME'] ?? 'unknown'
 ];
 
 // Message to display if database connection fails
