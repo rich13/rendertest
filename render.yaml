@@ -4,6 +4,8 @@ services:
     env: docker
     dockerfilePath: ./Dockerfile
     envVars:
+      - key: RENDER
+        value: true
       - key: DB_HOST
         fromDatabase:
           name: postgres-crud-test-db

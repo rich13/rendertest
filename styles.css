@@ -68,6 +68,26 @@ h2 {
     border-left: 4px solid #dc3545;
 }
 
+/* Debug Information Styling */
+.debug-card {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+}
+
+.debug-info {
+    margin-top: 15px;
+    background-color: #f1f1f1;
+    padding: 15px;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.debug-info pre {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    white-space: pre-wrap;
+}
+
 /* CRUD Results Styling */
 .crud-results {
     margin-top: 15px;

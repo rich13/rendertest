@@ -1,5 +1,5 @@
 <?php
-// Load environment variables from .env file
+// Load environment variables from .env file (only in local development)
 function loadEnv($path = '.env') {
     if (file_exists($path)) {
         $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -13,7 +13,7 @@ function loadEnv($path = '.env') {
             $name = trim($name);
             $value = trim($value);
             
-            if (!empty($name)) {
+            if (!empty($name) && !getenv($name)) {
                 putenv("$name=$value");
                 $_ENV[$name] = $value;
                 $_SERVER[$name] = $value;
@@ -22,8 +22,14 @@ function loadEnv($path = '.env') {
     }
 }
 
-// Load environment variables
-loadEnv();
+// Only load .env file if we're in local development (not on Render.com)
+if (!getenv('RENDER')) {
+    loadEnv();
+}
+
+// Debug information - only in development or when explicitly enabled
+$debug = [];
+$showDebug = getenv('DEBUG') || !getenv('RENDER');
 
 // Database connection settings
 $host = getenv('DB_HOST') ?: 'localhost';
@@ -31,6 +37,22 @@ $port = getenv('DB_PORT') ?: '5432';
 $dbname = getenv('DB_NAME') ?: 'postgres';
 $user = getenv('DB_USER') ?: 'postgres';
 $password = getenv('DB_PASSWORD') ?: 'postgres';
+
+// Add connection details to debug
+if ($showDebug) {
+    $debug['connection'] = [
+        'host' => $host,
+        'port' => $port,
+        'dbname' => $dbname,
+        'user' => $user,
+        'password' => '******' // Don't show actual password
+    ];
+    
+    $debug['environment'] = [
+        'RENDER' => getenv('RENDER') ? 'true' : 'false',
+        'SERVER_SOFTWARE' => $_SERVER['SERVER_SOFTWARE'] ?? 'unknown'
+    ];
+}
 
 // Message to display if database connection fails
 $errorMessage = '';
@@ -184,6 +206,15 @@ try {
                     </div>
                 <?php endif; ?>
             </section>
+            
+            <?php if ($showDebug && !empty($debug)): ?>
+                <section class="debug-card">
+                    <h2>Debug Information</h2>
+                    <div class="debug-info">
+                        <pre><?php echo htmlspecialchars(json_encode($debug, JSON_PRETTY_PRINT)); ?></pre>
+                    </div>
+                </section>
+            <?php endif; ?>
             
             <?php if ($dbConnectionStatus): ?>
                 <section class="crud-card">
