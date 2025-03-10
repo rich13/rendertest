@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: php-postgres-hello-world
+    runtime: php
+    buildCommand: ""
+    startCommand: php -S 0.0.0.0:$PORT -t .
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: postgres-hello-world-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: postgres-hello-world-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: postgres-hello-world-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: postgres-hello-world-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: postgres-hello-world-db
+          property: password
+
+databases:
+  - name: postgres-hello-world-db
+    plan: free
+    ipAllowList: [] 
