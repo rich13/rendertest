@@ -1,6 +1,6 @@
 # PHP PostgreSQL CRUD Test
 
-A simple PHP application that automatically performs CRUD (Create, Read, Update, Delete) operations with a PostgreSQL database, designed for testing deployment on Render.com.
+A simple PHP application that automatically performs CRUD (Create, Read, Update, Delete) operations with a PostgreSQL database, designed for testing deployment on Render.com using Docker.
 
 ## Features
 
@@ -9,6 +9,7 @@ A simple PHP application that automatically performs CRUD (Create, Read, Update,
 - Detailed operation results display
 - Responsive design with CSS
 - Client-side enhancements with JavaScript
+- Docker containerization for easy deployment
 
 ## Local Development Setup
 
@@ -41,6 +42,20 @@ php -S localhost:8972
 
 Then visit http://localhost:8972 in your browser.
 
+### Running with Docker
+
+You can also run the application using Docker:
+
+```bash
+# Build the Docker image
+docker build -t php-postgres-crud-test .
+
+# Run the container
+docker run -p 8972:80 --env-file .env -d php-postgres-crud-test
+```
+
+Then visit http://localhost:8972 in your browser.
+
 ## Deploying to Render.com
 
 ### PostgreSQL Database Setup
@@ -57,16 +72,15 @@ Then visit http://localhost:8972 in your browser.
 5. Click "Create Database"
 6. Once created, note the connection details (host, port, database name, username, password)
 
-### Web Service Setup
+### Web Service Setup with Docker
 
 1. From the Render.com Dashboard, click on "New +"
 2. Select "Web Service"
 3. Connect your repository or upload your code
 4. Configure your web service:
    - Name: php-postgres-crud-test
-   - Runtime: PHP
-   - Build Command: Leave empty
-   - Start Command: `php -S 0.0.0.0:$PORT -t .`
+   - Environment: Docker
+   - The Dockerfile is already included in the repository
 5. The environment variables will be automatically set if you use the Blueprint feature with the included `render.yaml` file
 6. Click "Create Web Service"
 
