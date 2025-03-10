@@ -1,4 +1,30 @@
 <?php
+// Load environment variables from .env file
+function loadEnv($path = '.env') {
+    if (file_exists($path)) {
+        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            // Skip comments
+            if (strpos(trim($line), '#') === 0) {
+                continue;
+            }
+            
+            list($name, $value) = explode('=', $line, 2);
+            $name = trim($name);
+            $value = trim($value);
+            
+            if (!empty($name)) {
+                putenv("$name=$value");
+                $_ENV[$name] = $value;
+                $_SERVER[$name] = $value;
+            }
+        }
+    }
+}
+
+// Load environment variables
+loadEnv();
+
 // Database connection settings
 $host = getenv('DB_HOST') ?: 'localhost';
 $port = getenv('DB_PORT') ?: '5432';
@@ -10,6 +36,7 @@ $password = getenv('DB_PASSWORD') ?: 'postgres';
 $errorMessage = '';
 $dbConnectionStatus = false;
 $currentTime = '';
+$crudResults = [];
 $testData = [];
 
 // Connect to PostgreSQL
@@ -41,31 +68,89 @@ try {
         // Insert a sample record
         $pdo->exec("
             INSERT INTO test_table (message) 
-            VALUES ('Hello from Render.com PHP deployment!')
+            VALUES ('Initial test record')
         ");
+        
+        $crudResults[] = [
+            'operation' => 'CREATE TABLE',
+            'status' => 'Success',
+            'details' => 'Created test_table and inserted initial record'
+        ];
     }
     
-    // Fetch data from the test table
-    $stmt = $pdo->query("SELECT * FROM test_table ORDER BY created_at DESC");
-    $testData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // Perform CRUD operations automatically
+    
+    // CREATE - Insert a new record
+    $createStmt = $pdo->prepare("INSERT INTO test_table (message) VALUES (?)");
+    $newMessage = 'Automatic CRUD test - ' . date('Y-m-d H:i:s');
+    $createStmt->execute([$newMessage]);
+    $newId = $pdo->lastInsertId();
+    
+    $crudResults[] = [
+        'operation' => 'CREATE',
+        'status' => 'Success',
+        'details' => "Inserted new record with ID: $newId and message: '$newMessage'"
+    ];
+    
+    // READ - Fetch all records
+    $readStmt = $pdo->query("SELECT * FROM test_table ORDER BY created_at DESC");
+    $testData = $readStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $crudResults[] = [
+        'operation' => 'READ',
+        'status' => 'Success',
+        'details' => 'Retrieved ' . count($testData) . ' records'
+    ];
+    
+    // UPDATE - Update the record we just created
+    $updateStmt = $pdo->prepare("UPDATE test_table SET message = ? WHERE id = ?");
+    $updatedMessage = 'Updated: ' . $newMessage;
+    $updateStmt->execute([$updatedMessage, $newId]);
+    
+    $crudResults[] = [
+        'operation' => 'UPDATE',
+        'status' => 'Success',
+        'details' => "Updated record ID: $newId with new message: '$updatedMessage'"
+    ];
+    
+    // READ AGAIN - Verify the update
+    $verifyStmt = $pdo->prepare("SELECT * FROM test_table WHERE id = ?");
+    $verifyStmt->execute([$newId]);
+    $updatedRecord = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+    
+    $crudResults[] = [
+        'operation' => 'VERIFY UPDATE',
+        'status' => 'Success',
+        'details' => "Record now contains: '" . $updatedRecord['message'] . "'"
+    ];
+    
+    // DELETE - Delete the record we created and updated
+    $deleteStmt = $pdo->prepare("DELETE FROM test_table WHERE id = ?");
+    $deleteStmt->execute([$newId]);
+    
+    $crudResults[] = [
+        'operation' => 'DELETE',
+        'status' => 'Success',
+        'details' => "Deleted record with ID: $newId"
+    ];
+    
+    // READ FINAL - Get final state of the table
+    $finalStmt = $pdo->query("SELECT * FROM test_table ORDER BY created_at DESC");
+    $testData = $finalStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $crudResults[] = [
+        'operation' => 'FINAL READ',
+        'status' => 'Success',
+        'details' => 'Final table state has ' . count($testData) . ' records'
+    ];
     
 } catch (PDOException $e) {
     $errorMessage = $e->getMessage();
-}
-
-// Handle form submission to add a new message
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && $dbConnectionStatus) {
-    try {
-        $message = $_POST['message'];
-        $stmt = $pdo->prepare("INSERT INTO test_table (message) VALUES (?)");
-        $stmt->execute([$message]);
-        
-        // Redirect to prevent form resubmission
-        header('Location: ' . $_SERVER['PHP_SELF']);
-        exit;
-    } catch (PDOException $e) {
-        $errorMessage = "Error adding message: " . $e->getMessage();
-    }
+    $crudResults[] = [
+        'operation' => 'ERROR',
+        'status' => 'Failed',
+        'details' => $errorMessage
+    ];
 }
 ?>
 
@@ -74,14 +159,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && $dbConn
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PHP PostgreSQL Hello World</title>
+    <title>PHP PostgreSQL CRUD Test</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>PHP PostgreSQL Hello World</h1>
-            <p>A simple application for testing Render.com deployment</p>
+            <h1>PHP PostgreSQL CRUD Test</h1>
+            <p>Automatic CRUD operations for testing Render.com deployment</p>
         </header>
         
         <main>
@@ -101,37 +186,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && $dbConn
             </section>
             
             <?php if ($dbConnectionStatus): ?>
-                <section class="form-card">
-                    <h2>Add a New Message</h2>
-                    <form method="POST">
-                        <div class="form-group">
-                            <label for="message">Message:</label>
-                            <input type="text" id="message" name="message" required>
-                        </div>
-                        <button type="submit">Save Message</button>
-                    </form>
+                <section class="crud-card">
+                    <h2>Automatic CRUD Test Results</h2>
+                    <div class="crud-results">
+                        <?php foreach ($crudResults as $result): ?>
+                            <div class="crud-operation <?php echo strtolower($result['status']); ?>">
+                                <div class="operation-type"><?php echo htmlspecialchars($result['operation']); ?></div>
+                                <div class="operation-status"><?php echo htmlspecialchars($result['status']); ?></div>
+                                <div class="operation-details"><?php echo htmlspecialchars($result['details']); ?></div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
                 </section>
                 
                 <section class="data-card">
-                    <h2>Stored Messages</h2>
+                    <h2>Current Database Records</h2>
                     <?php if (count($testData) > 0): ?>
-                        <ul class="message-list">
-                            <?php foreach ($testData as $row): ?>
-                                <li>
-                                    <div class="message-content"><?php echo htmlspecialchars($row['message']); ?></div>
-                                    <div class="message-time">Added on: <?php echo htmlspecialchars($row['created_at']); ?></div>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Message</th>
+                                    <th>Created At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($testData as $row): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($row['id']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['message']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['created_at']); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     <?php else: ?>
-                        <p>No messages found in the database.</p>
+                        <p>No records found in the database.</p>
                     <?php endif; ?>
                 </section>
             <?php endif; ?>
         </main>
         
         <footer>
-            <p>&copy; <?php echo date('Y'); ?> PHP PostgreSQL Demo</p>
+            <p>&copy; <?php echo date('Y'); ?> PHP PostgreSQL CRUD Test</p>
+            <p>Page generated at: <?php echo date('Y-m-d H:i:s'); ?></p>
         </footer>
     </div>
     

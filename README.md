@@ -1,11 +1,12 @@
-# PHP PostgreSQL Hello World
+# PHP PostgreSQL CRUD Test
 
-A simple PHP application with PostgreSQL database integration, designed for testing deployment on Render.com.
+A simple PHP application that automatically performs CRUD (Create, Read, Update, Delete) operations with a PostgreSQL database, designed for testing deployment on Render.com.
 
 ## Features
 
 - PHP backend with PostgreSQL database
-- Simple message board functionality
+- Automatic CRUD operations on each page load
+- Detailed operation results display
 - Responsive design with CSS
 - Client-side enhancements with JavaScript
 
@@ -22,13 +23,23 @@ A simple PHP application with PostgreSQL database integration, designed for test
 1. Clone this repository to your local machine
 2. Create a PostgreSQL database for the application
 3. Configure your web server to serve the application
-4. Set the following environment variables:
+4. Set the following environment variables in the `.env` file:
    - `DB_HOST`: PostgreSQL host (default: localhost)
    - `DB_PORT`: PostgreSQL port (default: 5432)
    - `DB_NAME`: Database name (default: postgres)
-   - `DB_USER`: Database username (default: postgres)
-   - `DB_PASSWORD`: Database password (default: postgres)
+   - `DB_USER`: Database username
+   - `DB_PASSWORD`: Database password
 5. Access the application through your web browser
+
+### Running with PHP's Built-in Server
+
+For quick testing, you can use PHP's built-in web server:
+
+```bash
+php -S localhost:8972
+```
+
+Then visit http://localhost:8972 in your browser.
 
 ## Deploying to Render.com
 
@@ -38,8 +49,8 @@ A simple PHP application with PostgreSQL database integration, designed for test
 2. Go to the Dashboard and click on "New +"
 3. Select "PostgreSQL"
 4. Configure your database:
-   - Name: Choose a name for your database
-   - Database: Choose a database name
+   - Name: postgres-crud-test-db
+   - Database: postgres
    - User: Choose a username
    - Region: Select the region closest to your users
    - PostgreSQL Version: Choose the latest version
@@ -52,26 +63,30 @@ A simple PHP application with PostgreSQL database integration, designed for test
 2. Select "Web Service"
 3. Connect your repository or upload your code
 4. Configure your web service:
-   - Name: Choose a name for your service
+   - Name: php-postgres-crud-test
    - Runtime: PHP
-   - Build Command: Leave empty or use `composer install` if you have dependencies
+   - Build Command: Leave empty
    - Start Command: `php -S 0.0.0.0:$PORT -t .`
-5. Add the following environment variables:
-   - `DB_HOST`: Your Render PostgreSQL host (from the database setup)
-   - `DB_PORT`: Your Render PostgreSQL port (usually 5432)
-   - `DB_NAME`: Your Render PostgreSQL database name
-   - `DB_USER`: Your Render PostgreSQL username
-   - `DB_PASSWORD`: Your Render PostgreSQL password
+5. The environment variables will be automatically set if you use the Blueprint feature with the included `render.yaml` file
 6. Click "Create Web Service"
+
+### Using Render Blueprint
+
+For easier deployment, you can use Render's Blueprint feature:
+
+1. Push your code to a Git repository
+2. In Render.com, go to "Blueprints" and click "New Blueprint Instance"
+3. Connect to your repository
+4. Render will automatically set up the web service and database as defined in the `render.yaml` file
 
 ## Testing the Deployment
 
 Once deployed, you can test the application by:
 
 1. Visiting the URL provided by Render.com
-2. Checking if the database connection is successful
-3. Adding messages through the form
-4. Verifying that messages are stored and displayed correctly
+2. The page will automatically perform CRUD operations on each load
+3. Check the "Automatic CRUD Test Results" section to see the results of each operation
+4. Verify that the database connection is successful
 
 ## Troubleshooting
 

@@ -14,7 +14,7 @@ body {
 }
 
 .container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
     background-color: #fff;
     border-radius: 8px;
@@ -68,60 +68,79 @@ h2 {
     border-left: 4px solid #dc3545;
 }
 
-.form-group {
-    margin-bottom: 15px;
+/* CRUD Results Styling */
+.crud-results {
+    margin-top: 15px;
 }
 
-label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 600;
+.crud-operation {
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    display: grid;
+    grid-template-columns: 150px 100px 1fr;
+    gap: 10px;
+    align-items: center;
+    background-color: #f8f9fa;
 }
 
-input[type="text"] {
+.crud-operation.success {
+    background-color: #e7f7ed;
+    border-left: 4px solid #28a745;
+}
+
+.crud-operation.failed {
+    background-color: #ffeaea;
+    border-left: 4px solid #dc3545;
+}
+
+.operation-type {
+    font-weight: bold;
+    color: #4a6fa5;
+}
+
+.operation-status {
+    font-weight: bold;
+}
+
+.operation-status:contains("Success") {
+    color: #28a745;
+}
+
+.operation-status:contains("Failed") {
+    color: #dc3545;
+}
+
+.operation-details {
+    color: #555;
+}
+
+/* Table Styling */
+.data-table {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
+    border-collapse: collapse;
+    margin-top: 15px;
 }
 
-button {
-    background-color: #4a6fa5;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s;
-}
-
-button:hover {
-    background-color: #3a5a8f;
-}
-
-.message-list {
-    list-style: none;
-}
-
-.message-list li {
-    padding: 15px;
+.data-table th,
+.data-table td {
+    padding: 12px;
+    text-align: left;
     border-bottom: 1px solid #eee;
 }
 
-.message-list li:last-child {
+.data-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #4a6fa5;
+}
+
+.data-table tr:hover {
+    background-color: #f5f7fa;
+}
+
+.data-table tr:last-child td {
     border-bottom: none;
-}
-
-.message-content {
-    font-size: 18px;
-    margin-bottom: 5px;
-}
-
-.message-time {
-    font-size: 12px;
-    color: #777;
 }
 
 footer {
@@ -130,4 +149,10 @@ footer {
     background-color: #f8f9fa;
     border-top: 1px solid #eee;
     color: #666;
+}
+
+.timestamp {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #999;
 } 
