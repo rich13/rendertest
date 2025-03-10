@@ -3,6 +3,9 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
+// Include the Render.com database connection fix
+require_once 'render-db-fix.php';
+
 // Load environment variables from .env file (only in local development)
 function loadEnv($path = '.env') {
     if (file_exists($path)) {
@@ -38,8 +41,8 @@ $showDebug = true;
 // List all environment variables for debugging
 $debug['all_env_vars'] = [];
 foreach ($_SERVER as $key => $value) {
-    if (strpos($key, 'DB_') === 0 || $key === 'RENDER' || $key === 'DATABASE_URL' || $key === 'DEBUG') {
-        $debug['all_env_vars'][$key] = ($key === 'DB_PASSWORD' || $key === 'DATABASE_URL') ? '******' : $value;
+    if (strpos($key, 'DB_') === 0 || $key === 'RENDER' || $key === 'DATABASE_URL' || $key === 'DEBUG' || $key === 'POSTGRES_PASSWORD') {
+        $debug['all_env_vars'][$key] = ($key === 'DB_PASSWORD' || $key === 'DATABASE_URL' || $key === 'POSTGRES_PASSWORD') ? '******' : $value;
     }
 }
 
@@ -53,46 +56,25 @@ $debug['env_vars'] = [
     'DATABASE_URL ($_SERVER)' => isset($_SERVER['DATABASE_URL']) ? 'set (hidden)' : 'not set',
     'DB_HOST (getenv)' => getenv('DB_HOST'),
     'DB_HOST ($_ENV)' => $_ENV['DB_HOST'] ?? 'not set',
-    'DB_HOST ($_SERVER)' => $_SERVER['DB_HOST'] ?? 'not set'
+    'DB_HOST ($_SERVER)' => $_SERVER['DB_HOST'] ?? 'not set',
+    'POSTGRES_PASSWORD (getenv)' => getenv('POSTGRES_PASSWORD') ? 'set (hidden)' : 'not set',
+    'POSTGRES_PASSWORD ($_ENV)' => isset($_ENV['POSTGRES_PASSWORD']) ? 'set (hidden)' : 'not set',
+    'POSTGRES_PASSWORD ($_SERVER)' => isset($_SERVER['POSTGRES_PASSWORD']) ? 'set (hidden)' : 'not set'
 ];
 
-// Check for Render-specific database URL
-$renderDbUrl = getenv('DATABASE_URL') ?: ($_ENV['DATABASE_URL'] ?? ($_SERVER['DATABASE_URL'] ?? null));
-if ($renderDbUrl) {
-    $debug['render_db_url'] = 'Found DATABASE_URL environment variable';
-    
-    // Parse the DATABASE_URL
-    $dbParams = parse_url($renderDbUrl);
-    $host = $dbParams['host'] ?? null;
-    $port = $dbParams['port'] ?? 5432;
-    $dbname = ltrim($dbParams['path'] ?? '', '/');
-    $user = $dbParams['user'] ?? null;
-    $password = $dbParams['pass'] ?? null;
-    
-    $debug['parsed_db_url'] = [
-        'host' => $host,
-        'port' => $port,
-        'dbname' => $dbname,
-        'user' => $user,
-        'password' => '******'
-    ];
-} else {
-    $debug['render_db_url'] = 'DATABASE_URL not found, using individual environment variables';
-    
-    // Try different ways to get environment variables
-    $host = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? ($_SERVER['DB_HOST'] ?? null));
-    $port = getenv('DB_PORT') ?: ($_ENV['DB_PORT'] ?? ($_SERVER['DB_PORT'] ?? '5432'));
-    $dbname = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? ($_SERVER['DB_NAME'] ?? null));
-    $user = getenv('DB_USER') ?: ($_ENV['DB_USER'] ?? ($_SERVER['DB_USER'] ?? null));
-    $password = getenv('DB_PASSWORD') ?: ($_ENV['DB_PASSWORD'] ?? ($_SERVER['DB_PASSWORD'] ?? null));
-}
+// Check if we're running on Render.com
+$isRender = getenv('RENDER') || isset($_ENV['RENDER']) || isset($_SERVER['RENDER']);
+$debug['is_render'] = $isRender ? 'true' : 'false';
 
-// Fallback to defaults if environment variables are not set
-if (empty($host)) $host = 'localhost';
-if (empty($port)) $port = '5432';
-if (empty($dbname)) $dbname = 'postgres';
-if (empty($user)) $user = 'postgres';
-// No default for password
+// Get database connection details
+$dbConfig = getRenderDbConnection();
+$host = $dbConfig['host'];
+$port = $dbConfig['port'];
+$dbname = $dbConfig['dbname'];
+$user = $dbConfig['user'];
+$password = $dbConfig['password'];
+
+$debug['using_render_db_fix'] = 'Using database connection from render-db-fix.php';
 
 // Add connection details to debug
 $debug['connection'] = [
