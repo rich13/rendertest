@@ -10,6 +10,13 @@ RUN apt-get update --allow-releaseinfo-change && \
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
+# Configure PHP to use environment variables
+RUN { \
+    echo 'variables_order = "EGPCS"'; \
+    echo 'display_errors = On'; \
+    echo 'error_reporting = E_ALL'; \
+} > /usr/local/etc/php/conf.d/docker-php-env.ini
+
 # Copy application files
 COPY . /var/www/html/
 

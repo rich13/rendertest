@@ -1,4 +1,8 @@
 <?php
+// Enable error reporting for debugging
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 // Load environment variables from .env file (only in local development)
 function loadEnv($path = '.env') {
     if (file_exists($path)) {
@@ -27,32 +31,71 @@ if (!getenv('RENDER')) {
     loadEnv();
 }
 
-// Debug information - only in development or when explicitly enabled
+// Debug information - always show in this version
 $debug = [];
-$showDebug = getenv('DEBUG') || !getenv('RENDER');
+$showDebug = true;
 
-// Database connection settings
-$host = getenv('DB_HOST') ?: 'localhost';
-$port = getenv('DB_PORT') ?: '5432';
-$dbname = getenv('DB_NAME') ?: 'postgres';
-$user = getenv('DB_USER') ?: 'postgres';
-$password = getenv('DB_PASSWORD') ?: 'postgres';
+// List all environment variables for debugging
+$allEnvVars = [];
+foreach ($_ENV as $key => $value) {
+    if (strpos($key, 'DB_') === 0 || $key === 'RENDER') {
+        $allEnvVars[$key] = ($key === 'DB_PASSWORD') ? '******' : $value;
+    }
+}
+$debug['env_vars'] = $allEnvVars;
 
-// Add connection details to debug
-if ($showDebug) {
-    $debug['connection'] = [
+// Check for Render-specific database URL
+$renderDbUrl = getenv('DATABASE_URL');
+if ($renderDbUrl) {
+    $debug['render_db_url'] = 'Found DATABASE_URL environment variable';
+    
+    // Parse the DATABASE_URL
+    $dbParams = parse_url($renderDbUrl);
+    $host = $dbParams['host'] ?? null;
+    $port = $dbParams['port'] ?? 5432;
+    $dbname = ltrim($dbParams['path'] ?? '', '/');
+    $user = $dbParams['user'] ?? null;
+    $password = $dbParams['pass'] ?? null;
+    
+    $debug['parsed_db_url'] = [
         'host' => $host,
         'port' => $port,
         'dbname' => $dbname,
         'user' => $user,
-        'password' => '******' // Don't show actual password
+        'password' => '******'
     ];
+} else {
+    $debug['render_db_url'] = 'DATABASE_URL not found, using individual environment variables';
     
-    $debug['environment'] = [
-        'RENDER' => getenv('RENDER') ? 'true' : 'false',
-        'SERVER_SOFTWARE' => $_SERVER['SERVER_SOFTWARE'] ?? 'unknown'
-    ];
+    // Database connection settings from individual environment variables
+    $host = getenv('DB_HOST');
+    $port = getenv('DB_PORT') ?: '5432';
+    $dbname = getenv('DB_NAME');
+    $user = getenv('DB_USER');
+    $password = getenv('DB_PASSWORD');
 }
+
+// Fallback to defaults if environment variables are not set
+if (empty($host)) $host = 'localhost';
+if (empty($port)) $port = '5432';
+if (empty($dbname)) $dbname = 'postgres';
+if (empty($user)) $user = 'postgres';
+// No default for password
+
+// Add connection details to debug
+$debug['connection'] = [
+    'host' => $host,
+    'port' => $port,
+    'dbname' => $dbname,
+    'user' => $user,
+    'password' => '******' // Don't show actual password
+];
+
+$debug['environment'] = [
+    'RENDER' => getenv('RENDER') ? 'true' : 'false',
+    'SERVER_SOFTWARE' => $_SERVER['SERVER_SOFTWARE'] ?? 'unknown',
+    'PHP_VERSION' => phpversion()
+];
 
 // Message to display if database connection fails
 $errorMessage = '';
@@ -64,6 +107,8 @@ $testData = [];
 // Connect to PostgreSQL
 try {
     $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;";
+    $debug['dsn'] = $dsn;
+    
     $pdo = new PDO($dsn, $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
     
     // Test the connection
@@ -168,6 +213,7 @@ try {
     
 } catch (PDOException $e) {
     $errorMessage = $e->getMessage();
+    $debug['error'] = $errorMessage;
     $crudResults[] = [
         'operation' => 'ERROR',
         'status' => 'Failed',
