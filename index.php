@@ -54,9 +54,6 @@ $debug['env_vars'] = [
     'DATABASE_URL (getenv)' => getenv('DATABASE_URL') ? 'set (hidden)' : 'not set',
     'DATABASE_URL ($_ENV)' => isset($_ENV['DATABASE_URL']) ? 'set (hidden)' : 'not set',
     'DATABASE_URL ($_SERVER)' => isset($_SERVER['DATABASE_URL']) ? 'set (hidden)' : 'not set',
-    'DB_HOST (getenv)' => getenv('DB_HOST'),
-    'DB_HOST ($_ENV)' => $_ENV['DB_HOST'] ?? 'not set',
-    'DB_HOST ($_SERVER)' => $_SERVER['DB_HOST'] ?? 'not set',
     'POSTGRES_PASSWORD (getenv)' => getenv('POSTGRES_PASSWORD') ? 'set (hidden)' : 'not set',
     'POSTGRES_PASSWORD ($_ENV)' => isset($_ENV['POSTGRES_PASSWORD']) ? 'set (hidden)' : 'not set',
     'POSTGRES_PASSWORD ($_SERVER)' => isset($_SERVER['POSTGRES_PASSWORD']) ? 'set (hidden)' : 'not set'
@@ -73,6 +70,11 @@ $port = $dbConfig['port'];
 $dbname = $dbConfig['dbname'];
 $user = $dbConfig['user'];
 $password = $dbConfig['password'];
+
+// Check if we have a DATABASE_URL
+if (isset($dbConfig['database_url'])) {
+    $debug['database_url_found'] = 'Using DATABASE_URL from environment';
+}
 
 $debug['using_render_db_fix'] = 'Using database connection from render-db-fix.php';
 

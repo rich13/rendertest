@@ -12,23 +12,7 @@ services:
         fromDatabase:
           name: postgres-crud-test-db
           property: connectionString
-      - key: DB_HOST
-        fromDatabase:
-          name: postgres-crud-test-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: postgres-crud-test-db
-          property: port
-      - key: DB_NAME
-        fromDatabase:
-          name: postgres-crud-test-db
-          property: database
-      - key: DB_USER
-        fromDatabase:
-          name: postgres-crud-test-db
-          property: user
-      - key: DB_PASSWORD
+      - key: POSTGRES_PASSWORD
         fromDatabase:
           name: postgres-crud-test-db
           property: password
